@@ -384,6 +384,7 @@ function loadScene(id) {
     sceneNameEl.textContent = cfg.name;
     updateHotspots(cfg.hotspots || []);
     buildVariants(cfg);
+    updateSidebarActive();
 
     loadingEl.classList.add('hidden');
     fadeEl.style.opacity = '0';
@@ -567,6 +568,41 @@ function animate() {
 // ═══════════════════════════════════════════════════════════════
 // СТАРТ
 // ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// САЙДБАР (СПИСОК КОМНАТ)
+// ═══════════════════════════════════════════════════════════════
+
+const sidebarEl = document.getElementById('sidebar');
+const sidebarList = document.getElementById('sidebar-list');
+const sidebarToggle = document.getElementById('sidebar-toggle');
+
+function buildSidebar() {
+  sidebarList.innerHTML = '';
+  for (const [id, cfg] of Object.entries(scenes)) {
+    const item = document.createElement('div');
+    item.className = 'sidebar-room' + (id === currentSceneId ? ' active' : '');
+    item.textContent = cfg.name;
+    item.addEventListener('click', () => {
+      if (id !== currentSceneId) loadScene(id);
+      sidebarEl.classList.remove('open');
+    });
+    sidebarList.appendChild(item);
+  }
+}
+
+sidebarToggle.addEventListener('click', () => {
+  sidebarEl.classList.toggle('open');
+});
+
+function updateSidebarActive() {
+  sidebarList.querySelectorAll('.sidebar-room').forEach((el, i) => {
+    const ids = Object.keys(scenes);
+    el.classList.toggle('active', ids[i] === currentSceneId);
+  });
+}
+
+buildSidebar();
 
 loadScene('my-spot');
 animate();
