@@ -146,6 +146,14 @@ renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
 let touchId = null;
 let prevTouch = { x: 0, y: 0 };
+let pinchDist = 0;
+let pinchFov = 75;
+
+function touchDist(t1, t2) {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
 
 renderer.domElement.addEventListener('touchstart', (e) => {
   if (e.touches.length === 1) {
@@ -154,6 +162,9 @@ renderer.domElement.addEventListener('touchstart', (e) => {
     prevTouch.y = e.touches[0].clientY;
     mouseMoved = false;
     isDragging = true;
+  } else if (e.touches.length === 2) {
+    pinchDist = touchDist(e.touches[0], e.touches[1]);
+    pinchFov = fov.value;
   }
 }, { passive: true });
 
@@ -171,10 +182,17 @@ renderer.domElement.addEventListener('touchmove', (e) => {
 
     prevTouch.x = touch.clientX;
     prevTouch.y = touch.clientY;
+  } else if (e.touches.length === 2) {
+    const dist = touchDist(e.touches[0], e.touches[1]);
+    if (pinchDist > 0) {
+      const ratio = pinchDist / dist;
+      zoom(pinchFov * (1 - ratio));
+    }
   }
 }, { passive: true });
 
 renderer.domElement.addEventListener('touchend', (e) => {
+  if (e.touches.length < 2) pinchDist = 0;
   for (const t of e.changedTouches) {
     if (t.identifier === touchId) {
       touchId = null;
