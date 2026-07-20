@@ -186,7 +186,7 @@ renderer.domElement.addEventListener('touchmove', (e) => {
     const dist = touchDist(e.touches[0], e.touches[1]);
     if (pinchDist > 0) {
       const ratio = pinchDist / dist;
-      zoom(pinchFov * (1 - ratio));
+      zoom(pinchFov * (ratio - 1));
     }
   }
 }, { passive: true });
