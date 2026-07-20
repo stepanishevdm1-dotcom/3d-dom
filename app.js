@@ -47,7 +47,61 @@ const scenes = {
       { label: 'ИИ', image: 'коридор ии.jpeg' }
     ],
     hotspots: [
-      { target: 'wardrobe', yaw: 1.353, pitch: -0.234, label: 'Около шкафа' }
+      { target: 'wardrobe', yaw: 1.353, pitch: -0.234, label: 'Около шкафа' },
+      { target: 'toilet', yaw: 0.890, pitch: -0.435, label: 'Туалет' },
+      { target: 'bathroom', yaw: 5.983, pitch: -0.429, label: 'Ванная' },
+      { target: 'kitchen', yaw: 4.379, pitch: -0.405, label: 'Кухня' }
+    ]
+  },
+  'toilet': {
+    name: 'Туалет',
+    image: 'туалет.jpg',
+    variants: [
+      { label: 'Обычная', image: 'туалет.jpg' },
+      { label: 'ИИ', image: 'туалет ии.jpeg' }
+    ],
+    hotspots: [
+      { target: 'hall', yaw: 1.698, pitch: -0.401, label: 'Коридор' }
+    ]
+  },
+  'bathroom': {
+    name: 'Ванная',
+    image: 'ванная.jpg',
+    variants: [
+      { label: 'Обычная', image: 'ванная.jpg' },
+      { label: 'ИИ', image: 'ванная ии.jpeg' }
+    ],
+    hotspots: [
+      { target: 'hall', yaw: 1.518, pitch: -0.485, label: 'Коридор' }
+    ]
+  },
+  'kitchen': {
+    name: 'Кухня',
+    image: 'кухня.jpg',
+    hotspots: [
+      { target: 'hall', yaw: 4.374, pitch: -0.269, label: 'Коридор' },
+      { target: 'livingroom', yaw: 1.318, pitch: -0.257, label: 'Гостиная' },
+      { target: 'office', yaw: 0.424, pitch: -0.122, label: 'Кабинет' }
+    ]
+  },
+  'livingroom': {
+    name: 'Гостиная',
+    image: 'гостиная.jpg',
+    hotspots: [
+      { target: 'kitchen', yaw: 1.214, pitch: -0.150, label: 'Кухня' },
+      { target: 'office', yaw: 2.730, pitch: -0.175, label: 'Кабинет' }
+    ]
+  },
+  'office': {
+    name: 'Кабинет',
+    image: 'кабинет.jpg',
+    variants: [
+      { label: 'Обычная', image: 'кабинет.jpg' },
+      { label: 'ИИ', image: 'кабинет ии.png' }
+    ],
+    hotspots: [
+      { target: 'kitchen', yaw: 3.704, pitch: -0.176, label: 'Кухня' },
+      { target: 'livingroom', yaw: 2.878, pitch: -0.190, label: 'Гостиная' }
     ]
   }
 };
