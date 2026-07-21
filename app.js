@@ -50,7 +50,8 @@ const scenes = {
       { target: 'wardrobe', yaw: 1.353, pitch: -0.234, label: 'Около шкафа' },
       { target: 'toilet', yaw: 0.890, pitch: -0.435, label: 'Туалет' },
       { target: 'bathroom', yaw: 5.983, pitch: -0.429, label: 'Ванная' },
-      { target: 'kitchen', yaw: 4.379, pitch: -0.405, label: 'Кухня' }
+      { target: 'kitchen', yaw: 4.379, pitch: -0.405, label: 'Кухня' },
+      { target: 'bedroom', yaw: 5.116, pitch: -0.414, label: 'Спальня' }
     ]
   },
   'toilet': {
@@ -103,6 +104,11 @@ const scenes = {
       { target: 'kitchen', yaw: 3.704, pitch: -0.176, label: 'Кухня' },
       { target: 'livingroom', yaw: 2.878, pitch: -0.190, label: 'Гостиная' }
     ]
+  },
+  'bedroom': {
+    name: 'Спальня',
+    image: 'спальня.jpg',
+    hotspots: []
   }
 };
 
