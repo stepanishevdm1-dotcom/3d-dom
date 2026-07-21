@@ -118,7 +118,10 @@ const scenes = {
   'balcony': {
     name: 'Балкон',
     image: 'балкон.jpg',
-    hotspots: []
+    hotspots: [
+      { target: 'bedroom', yaw: 0.778, pitch: -0.220, label: 'Спальня' },
+      { target: 'livingroom', yaw: 1.643, pitch: -0.232, label: 'Гостиная' }
+    ]
   }
 };
 
