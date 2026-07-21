@@ -108,8 +108,11 @@ const scenes = {
   'bedroom': {
     name: 'Спальня',
     image: 'спальня.jpg',
-    hotspots: []
+    hotspots: [
+      { target: 'hall', yaw: 0.396, pitch: -0.258, label: 'Коридор' }
+    ]
   }
+};
 };
 
 // ═══════════════════════════════════════════════════════════════
