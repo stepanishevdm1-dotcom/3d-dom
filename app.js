@@ -82,7 +82,8 @@ const scenes = {
     hotspots: [
       { target: 'hall', yaw: 4.374, pitch: -0.269, label: 'Коридор' },
       { target: 'livingroom', yaw: 1.318, pitch: -0.257, label: 'Гостиная' },
-      { target: 'office', yaw: 0.424, pitch: -0.122, label: 'Кабинет' }
+      { target: 'office', yaw: 0.424, pitch: -0.122, label: 'Кабинет' },
+      { target: 'balcony', yaw: 1.890, pitch: -0.190, label: 'Балкон' }
     ]
   },
   'livingroom': {
@@ -90,7 +91,8 @@ const scenes = {
     image: 'гостиная.jpg',
     hotspots: [
       { target: 'kitchen', yaw: 1.214, pitch: -0.150, label: 'Кухня' },
-      { target: 'office', yaw: 2.730, pitch: -0.175, label: 'Кабинет' }
+      { target: 'office', yaw: 2.730, pitch: -0.175, label: 'Кабинет' },
+      { target: 'balcony', yaw: 6.030, pitch: -0.239, label: 'Балкон' }
     ]
   },
   'office': {
@@ -109,8 +111,14 @@ const scenes = {
     name: 'Спальня',
     image: 'спальня.jpg',
     hotspots: [
-      { target: 'hall', yaw: 0.396, pitch: -0.258, label: 'Коридор' }
+      { target: 'hall', yaw: 0.396, pitch: -0.258, label: 'Коридор' },
+      { target: 'balcony', yaw: 2.782, pitch: -0.143, label: 'Балкон' }
     ]
+  },
+  'balcony': {
+    name: 'Балкон',
+    image: 'балкон.jpg',
+    hotspots: []
   }
 };
 
