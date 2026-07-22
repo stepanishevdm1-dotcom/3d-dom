@@ -320,8 +320,8 @@ function handleClick(clientX, clientY) {
 function startHotspotTransition(hotspot, onComplete) {
   const duration = 600;
   const startFov = fov.value;
-  const startYaw = targetEuler.y;
-  const startPitch = targetEuler.x;
+  const startYaw = currentEuler.y;
+  const startPitch = currentEuler.x;
   hotspotAnim = {
     startTime: performance.now(), duration,
     startFov, targetFov: 20,
