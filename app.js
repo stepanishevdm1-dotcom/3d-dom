@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+THREE.Cache.enabled = true;
 
 // ═══════════════════════════════════════════════════════════════
 // КОНФИГУРАЦИЯ СЦЕН
@@ -426,14 +427,17 @@ function loadScene(id, smooth) {
     loadingEl.classList.remove('hidden');
   }
 
+  // Для плавного перехода поворачиваемся спиной к двери (на 180°)
+  const finalYaw = smooth ? savedYaw + Math.PI : savedYaw;
+
   const src = startIdx > 0 ? cfg.variants[startIdx].image : cfg.image;
   const path = src.replace(/\\/g, '/');
   loadTexture(path, (texture) => {
     applyTexture(texture);
 
     // Восстанавливаем направление камеры
-    targetEuler.set(savedPitch, savedYaw, 0, 'YXZ');
-    currentEuler.set(savedPitch, savedYaw, 0, 'YXZ');
+    targetEuler.set(savedPitch, finalYaw, 0, 'YXZ');
+    currentEuler.set(savedPitch, finalYaw, 0, 'YXZ');
     applyRotation();
 
     sceneNameEl.textContent = cfg.name;
