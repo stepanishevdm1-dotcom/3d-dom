@@ -686,6 +686,9 @@ async function preloadInitial() {
   await Promise.all(promises);
   loadingTitle.textContent = 'Загрузка завершена';
   await new Promise(r => setTimeout(r, 400));
+  // Убираем список после предзагрузки — при переходах показывать только спиннер
+  preloadList.innerHTML = '';
+  loadingTitle.textContent = 'Загрузка панорамы...';
 }
 
 function preloadNeighbors(sceneId) {
