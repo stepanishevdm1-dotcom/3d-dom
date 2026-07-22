@@ -60,7 +60,7 @@ html, body {
   flex-direction: column;
   gap: 8px;
   margin-top: 20px;
-  width: 220px;
+  width: 320px;
 }
 
 .preload-item {
@@ -93,6 +93,15 @@ html, body {
 .preload-name {
   font-weight: 500;
   flex: 1;
+}
+
+.preload-size {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  margin-left: auto;
+  margin-right: 6px;
+  white-space: nowrap;
 }
 
 .preload-pct {

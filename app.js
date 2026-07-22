@@ -642,7 +642,7 @@ function buildPreloadUI(ids) {
     const item = document.createElement('div');
     item.className = 'preload-item';
     item.id = 'preload-' + id;
-    item.innerHTML = '<div class="preload-icon"></div><span class="preload-name">' + scenes[id].name + '</span><span class="preload-pct">0%</span>';
+    item.innerHTML = '<div class="preload-icon"></div><span class="preload-name">' + scenes[id].name + '</span><span class="preload-size"></span><span class="preload-pct">0%</span>';
     preloadList.appendChild(item);
   }
 }
@@ -652,6 +652,12 @@ function markPreloaded(id) {
   if (el) el.classList.add('loaded');
 }
 
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' Б';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+}
+
 function preloadImage(path, onProgress) {
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
@@ -659,7 +665,8 @@ function preloadImage(path, onProgress) {
     xhr.responseType = 'blob';
     xhr.onprogress = (e) => {
       if (e.lengthComputable && onProgress) {
-        onProgress(Math.round((e.loaded / e.total) * 100));
+        const pct = Math.round((e.loaded / e.total) * 100);
+        onProgress(pct, e.loaded, e.total);
       }
     };
     xhr.onload = () => resolve(true);
@@ -674,8 +681,10 @@ async function preloadInitial() {
 
   const promises = ids.map(async (id) => {
     const pctEl = document.querySelector('#preload-' + id + ' .preload-pct');
-    const ok = await preloadImage(getSceneDefaultImage(id), (pct) => {
+    const sizeEl = document.querySelector('#preload-' + id + ' .preload-size');
+    const ok = await preloadImage(getSceneDefaultImage(id), (pct, loaded, total) => {
       if (pctEl) pctEl.textContent = pct + '%';
+      if (sizeEl) sizeEl.textContent = formatBytes(loaded) + ' / ' + formatBytes(total);
     });
     preloaded.add(id);
     markPreloaded(id);
