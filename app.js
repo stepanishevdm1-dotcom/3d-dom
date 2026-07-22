@@ -334,7 +334,7 @@ function handleClick(clientX, clientY) {
 }
 
 function startHotspotTransition(hotspot, targetId, vIdx, imgPath, onComplete) {
-  const duration = 800;
+  const duration = 600;
   const startFov = fov.value;
   const startYaw = currentEuler.y;
   const startPitch = currentEuler.x;
@@ -358,14 +358,10 @@ function completeSmoothTransition(id, variantIdx, img) {
   const sourceId = currentSceneId;
   const cfg = scenes[id];
 
-  // Завершаем наложение, если вдруг ещё идёт
+  // На случай если наложение ещё не завершилось
   if (crossfadeAnim) {
-    if (sphereOld) {
-      scene.remove(sphereOld);
-      sphereOld.material.dispose();
-    }
+    if (sphereOld) { scene.remove(sphereOld); sphereOld.material.dispose(); sphereOld = null; }
     crossfadeAnim = null;
-    sphereOld = null;
   }
   sphere.material.transparent = false;
   sphere.material.depthWrite = true;
@@ -425,7 +421,7 @@ function loadTexture(path, cb) {
 function applyTexture(texture, crossfade) {
   const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
   if (crossfade && sphere) {
-    // Старую сферу делаем прозрачной для наложения
+    sphereOld = sphere;
     const newSphere = new THREE.Mesh(sphereGeom, mat);
     newSphere.material.transparent = true;
     newSphere.material.opacity = 0;
@@ -434,9 +430,8 @@ function applyTexture(texture, crossfade) {
     sphere.material.transparent = true;
     sphere.material.depthWrite = false;
     sphere.material.renderOrder = 0;
-    sphereOld = sphere;
     sphere = newSphere;
-    crossfadeAnim = { startTime: performance.now(), duration: 400 };
+    crossfadeAnim = { startTime: performance.now(), duration: 60 };
   } else if (sphere) {
     if (sphere.material.map) sphere.material.map.dispose();
     sphere.material.dispose();
@@ -697,8 +692,8 @@ function animate() {
     camera.fov = fov.value;
     camera.updateProjectionMatrix();
 
-    // Начинаем наложение когда камера уже смотрит примерно на метку
-    if (!a.crossfadeDone && t >= 0.5) {
+    // Быстрое наложение в самом конце
+    if (!a.crossfadeDone && t >= 0.9) {
       a.crossfadeDone = true;
       const cached = imageCache.get(a.imgPath);
       if (cached) {
@@ -711,7 +706,7 @@ function animate() {
       }
     }
 
-    // Обновляем прозрачность во время движения камеры
+    // Обновляем прозрачность во время наложения (60мс, конец анимации)
     if (crossfadeAnim) {
       const cf = Math.min((performance.now() - crossfadeAnim.startTime) / crossfadeAnim.duration, 1);
       if (sphereOld) sphereOld.material.opacity = 1 - cf;
