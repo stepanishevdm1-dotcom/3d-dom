@@ -697,8 +697,8 @@ function animate() {
     camera.fov = fov.value;
     camera.updateProjectionMatrix();
 
-    // Начинаем наложение новой сцены сразу с началом движения
-    if (!a.crossfadeDone) {
+    // Начинаем наложение когда камера уже смотрит примерно на метку
+    if (!a.crossfadeDone && t >= 0.35) {
       a.crossfadeDone = true;
       const cached = imageCache.get(a.imgPath);
       if (cached) {
