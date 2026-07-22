@@ -314,17 +314,15 @@ function handleClick(clientX, clientY) {
         const vIdx = (aiMode && cfg.variants && cfg.variants.length > 1) ? 1 : 0;
         const src = vIdx > 0 ? cfg.variants[vIdx].image : cfg.image;
         const path = src.replace(/\\/g, '/');
-        let loadedImg = null;
-        const img = new Image();
-        img.onload = img.onerror = () => { loadedImg = img; };
-        img.src = path;
-        if (img.complete && img.naturalWidth > 0) loadedImg = img;
         startHotspotTransition(hotspot, () => {
-          if (loadedImg) {
-            completeSmoothTransition(target, vIdx, loadedImg);
+          const cached = imageCache.get(path);
+          if (cached) {
+            completeSmoothTransition(target, vIdx, cached);
           } else {
-            const wait = () => { if (loadedImg) completeSmoothTransition(target, vIdx, loadedImg); else requestAnimationFrame(wait); };
-            wait();
+            // Если вдруг не в кэше — загружаем
+            const img = new Image();
+            img.onload = img.onerror = () => completeSmoothTransition(target, vIdx, img);
+            img.src = path;
           }
         });
       } else {
@@ -758,6 +756,7 @@ function updateSidebarActive() {
 // ═══════════════════════════════════════════════════════════════
 
 const preloaded = new Set();
+const imageCache = new Map();
 const preloadList = document.getElementById('preload-list');
 const loadingTitle = document.getElementById('loading-title');
 
@@ -800,7 +799,18 @@ function preloadImage(path, onProgress) {
         onProgress(pct, e.loaded, e.total);
       }
     };
-    xhr.onload = () => resolve(true);
+    xhr.onload = () => {
+      const blob = xhr.response;
+      if (blob) {
+        const img = new Image();
+        img.onload = () => {
+          imageCache.set(path, img);
+          URL.revokeObjectURL(img.src);
+        };
+        img.src = URL.createObjectURL(blob);
+      }
+      resolve(true);
+    };
     xhr.onerror = () => resolve(false);
     xhr.send();
   });
