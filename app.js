@@ -424,8 +424,10 @@ function loadScene(id, smooth) {
   const startIdx = (aiMode && cfg.variants && cfg.variants.length > 1) ? 1 : 0;
   currentVariant = startIdx;
 
-  if (!smooth) fadeEl.style.opacity = '1';
-  loadingEl.classList.remove('hidden');
+  if (!smooth) {
+    fadeEl.style.opacity = '1';
+    loadingEl.classList.remove('hidden');
+  }
 
   const src = startIdx > 0 ? cfg.variants[startIdx].image : cfg.image;
   const path = src.replace(/\\/g, '/');
@@ -443,10 +445,10 @@ function loadScene(id, smooth) {
     updateSidebarActive();
     preloadNeighbors(id);
 
-    loadingEl.classList.add('hidden');
     if (smooth) {
       startEnterAnim();
     } else {
+      loadingEl.classList.add('hidden');
       fadeEl.style.opacity = '0';
     }
   });
