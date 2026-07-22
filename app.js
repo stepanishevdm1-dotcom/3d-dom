@@ -642,7 +642,7 @@ function buildPreloadUI(ids) {
     const item = document.createElement('div');
     item.className = 'preload-item';
     item.id = 'preload-' + id;
-    item.innerHTML = '<div class="preload-icon"></div><span class="preload-name">' + scenes[id].name + '</span>';
+    item.innerHTML = '<div class="preload-icon"></div><span class="preload-name">' + scenes[id].name + '</span><span class="preload-pct">0%</span>';
     preloadList.appendChild(item);
   }
 }
@@ -652,12 +652,19 @@ function markPreloaded(id) {
   if (el) el.classList.add('loaded');
 }
 
-function preloadImage(path) {
+function preloadImage(path, onProgress) {
   return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = () => resolve(false);
-    img.src = path;
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', path, true);
+    xhr.responseType = 'blob';
+    xhr.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+    xhr.onload = () => resolve(true);
+    xhr.onerror = () => resolve(false);
+    xhr.send();
   });
 }
 
@@ -666,9 +673,13 @@ async function preloadInitial() {
   buildPreloadUI(ids);
 
   const promises = ids.map(async (id) => {
-    const ok = await preloadImage(getSceneDefaultImage(id));
+    const pctEl = document.querySelector('#preload-' + id + ' .preload-pct');
+    const ok = await preloadImage(getSceneDefaultImage(id), (pct) => {
+      if (pctEl) pctEl.textContent = pct + '%';
+    });
     preloaded.add(id);
     markPreloaded(id);
+    if (pctEl) pctEl.textContent = '100%';
     return ok;
   });
 
