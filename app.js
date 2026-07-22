@@ -310,7 +310,22 @@ function handleClick(clientX, clientY) {
     if (target && scenes[target] && target !== currentSceneId) {
       const hotspot = (scenes[currentSceneId].hotspots || []).find(h => h.target === target);
       if (hotspot) {
-        startHotspotTransition(hotspot, () => loadScene(target, true));
+        const cfg = scenes[target];
+        const vIdx = (aiMode && cfg.variants && cfg.variants.length > 1) ? 1 : 0;
+        const src = vIdx > 0 ? cfg.variants[vIdx].image : cfg.image;
+        const path = src.replace(/\\/g, '/');
+        let loadedImg = null;
+        const img = new Image();
+        img.onload = () => { loadedImg = img; };
+        img.src = path;
+        startHotspotTransition(hotspot, () => {
+          if (loadedImg) {
+            completeSmoothTransition(target, vIdx, loadedImg);
+          } else {
+            const wait = () => { if (loadedImg) completeSmoothTransition(target, vIdx, loadedImg); else requestAnimationFrame(wait); };
+            wait();
+          }
+        });
       } else {
         loadScene(target);
       }
@@ -336,8 +351,41 @@ function startHotspotTransition(hotspot, onComplete) {
 }
 
 function startEnterAnim() {
-  const startFov = fov.value;
-  enterAnim = { startTime: performance.now(), startFov, midFov: 120, targetFov: 75, phase1: 250, phase2: 400 };
+  enterAnim = { startTime: performance.now(), startFov: 120, targetFov: 75, duration: 500 };
+}
+
+function completeSmoothTransition(id, variantIdx, img) {
+  const texture = new THREE.Texture(img);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.repeat.x = -1;
+  texture.needsUpdate = true;
+
+  const yaw = targetEuler.y + Math.PI;
+  const pitch = targetEuler.x;
+  const cfg = scenes[id];
+
+  currentSceneId = id;
+  currentVariant = variantIdx;
+
+  // Максимальное отдаление сразу
+  fov.value = 120;
+  camera.fov = 120;
+  camera.updateProjectionMatrix();
+
+  applyTexture(texture);
+
+  targetEuler.set(pitch, yaw, 0, 'YXZ');
+  currentEuler.set(pitch, yaw, 0, 'YXZ');
+  applyRotation();
+
+  sceneNameEl.textContent = cfg.name;
+  updateHotspots(cfg.hotspots || []);
+  buildVariants(cfg);
+  updateSidebarActive();
+  preloadNeighbors(id);
+
+  startEnterAnim();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -637,24 +685,15 @@ function animate() {
     return;
   }
 
-  // Анимация входа в комнату — от текущего зума к 120, потом к 75
+  // Анимация входа в комнату — плавный зум из 120 в 75
   if (enterAnim) {
-    const elapsed = performance.now() - enterAnim.startTime;
+    const t = Math.min((performance.now() - enterAnim.startTime) / enterAnim.duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
     const a = enterAnim;
-    if (elapsed < a.phase1) {
-      const t = elapsed / a.phase1;
-      const ease = 1 - Math.pow(1 - t, 3);
-      fov.value = a.startFov + (a.midFov - a.startFov) * ease;
-    } else if (elapsed < a.phase1 + a.phase2) {
-      const t = (elapsed - a.phase1) / a.phase2;
-      const ease = 1 - Math.pow(1 - t, 3);
-      fov.value = a.midFov + (a.targetFov - a.midFov) * ease;
-    } else {
-      fov.value = a.targetFov;
-      enterAnim = null;
-    }
+    fov.value = a.startFov + (a.targetFov - a.startFov) * ease;
     camera.fov = fov.value;
     camera.updateProjectionMatrix();
+    if (t >= 1) enterAnim = null;
   }
 
   // Плавное приближение камеры к целевым углам
