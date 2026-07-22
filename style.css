@@ -51,6 +51,49 @@ html, body {
   transition: opacity 0.4s;
 }
 
+#loading-title {
+  margin-top: 4px;
+}
+
+#preload-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+  width: 220px;
+}
+
+.preload-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  transition: color 0.3s;
+}
+
+.preload-item.loaded {
+  color: rgba(255,255,255,0.8);
+}
+
+.preload-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  flex-shrink: 0;
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.preload-item.loaded .preload-icon {
+  background: #4caf50;
+  border-color: #4caf50;
+}
+
+.preload-name {
+  font-weight: 500;
+}
+
 #loading.hidden {
   opacity: 0;
   pointer-events: none;

@@ -404,6 +404,7 @@ function loadScene(id) {
     updateHotspots(cfg.hotspots || []);
     buildVariants(cfg);
     updateSidebarActive();
+    preloadNeighbors(id);
 
     loadingEl.classList.add('hidden');
     fadeEl.style.opacity = '0';
@@ -621,7 +622,76 @@ function updateSidebarActive() {
   });
 }
 
-buildSidebar();
+// ═══════════════════════════════════════════════════════════════
+// ПРЕДЗАГРУЗКА
+// ═══════════════════════════════════════════════════════════════
 
-loadScene('my-spot');
-animate();
+const preloaded = new Set();
+const preloadList = document.getElementById('preload-list');
+const loadingTitle = document.getElementById('loading-title');
+
+function getSceneDefaultImage(id) {
+  const cfg = scenes[id];
+  return ((cfg.variants && cfg.variants.length > 0) ? cfg.variants[0].image : cfg.image).replace(/\\/g, '/');
+}
+
+function buildPreloadUI(ids) {
+  preloadList.innerHTML = '';
+  loadingTitle.textContent = 'Загрузка панорам...';
+  for (const id of ids) {
+    const item = document.createElement('div');
+    item.className = 'preload-item';
+    item.id = 'preload-' + id;
+    item.innerHTML = '<div class="preload-icon"></div><span class="preload-name">' + scenes[id].name + '</span>';
+    preloadList.appendChild(item);
+  }
+}
+
+function markPreloaded(id) {
+  const el = document.getElementById('preload-' + id);
+  if (el) el.classList.add('loaded');
+}
+
+function preloadImage(path) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = path;
+  });
+}
+
+async function preloadInitial() {
+  const ids = ['hall', 'wardrobe', 'toilet', 'bathroom', 'kitchen', 'bedroom'];
+  buildPreloadUI(ids);
+
+  const promises = ids.map(async (id) => {
+    const ok = await preloadImage(getSceneDefaultImage(id));
+    preloaded.add(id);
+    markPreloaded(id);
+    return ok;
+  });
+
+  await Promise.all(promises);
+  loadingTitle.textContent = 'Загрузка завершена';
+  await new Promise(r => setTimeout(r, 400));
+}
+
+function preloadNeighbors(sceneId) {
+  const cfg = scenes[sceneId];
+  if (!cfg || !cfg.hotspots) return;
+  for (const h of cfg.hotspots) {
+    const id = h.target;
+    if (preloaded.has(id)) continue;
+    preloaded.add(id);
+    preloadImage(getSceneDefaultImage(id));
+  }
+}
+
+// Старт: предзагрузка → запуск
+(async () => {
+  await preloadInitial();
+  buildSidebar();
+  loadScene('hall');
+  animate();
+})();
