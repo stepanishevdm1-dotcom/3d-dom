@@ -322,11 +322,14 @@ function startHotspotTransition(hotspot, onComplete) {
   const startFov = fov.value;
   const startYaw = currentEuler.y;
   const startPitch = currentEuler.x;
+  let yawDelta = hotspot.yaw - startYaw;
+  let pitchDelta = hotspot.pitch - startPitch;
+  while (yawDelta > Math.PI) yawDelta -= 2 * Math.PI;
+  while (yawDelta < -Math.PI) yawDelta += 2 * Math.PI;
   hotspotAnim = {
     startTime: performance.now(), duration,
     startFov, targetFov: 20,
-    startYaw, targetYaw: hotspot.yaw,
-    startPitch, targetPitch: hotspot.pitch,
+    startYaw, yawDelta, startPitch, pitchDelta,
     onComplete
   };
 }
@@ -613,8 +616,8 @@ function animate() {
     const t = Math.min((performance.now() - hotspotAnim.startTime) / hotspotAnim.duration, 1);
     const ease = 1 - Math.pow(1 - t, 3);
     const a = hotspotAnim;
-    const yaw = a.startYaw + (a.targetYaw - a.startYaw) * ease;
-    const pitch = a.startPitch + (a.targetPitch - a.startPitch) * ease;
+    const yaw = a.startYaw + a.yawDelta * ease;
+    const pitch = a.startPitch + a.pitchDelta * ease;
     targetEuler.set(pitch, yaw, 0, 'YXZ');
     currentEuler.set(pitch, yaw, 0, 'YXZ');
     applyRotation();
