@@ -335,11 +335,8 @@ function startHotspotTransition(hotspot, onComplete) {
 }
 
 function startEnterAnim() {
-  const duration = 500;
-  fov.value = 120;
-  camera.fov = 120;
-  camera.updateProjectionMatrix();
-  enterAnim = { startTime: performance.now(), duration, startFov: 120, targetFov: 75 };
+  const startFov = fov.value;
+  enterAnim = { startTime: performance.now(), startFov, midFov: 120, targetFov: 75, phase1: 250, phase2: 400 };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -636,15 +633,24 @@ function animate() {
     return;
   }
 
-  // Анимация выхода из двери — плавный зум из 120 в 75
+  // Анимация входа в комнату — от текущего зума к 120, потом к 75
   if (enterAnim) {
-    const t = Math.min((performance.now() - enterAnim.startTime) / enterAnim.duration, 1);
-    const ease = 1 - Math.pow(1 - t, 3);
+    const elapsed = performance.now() - enterAnim.startTime;
     const a = enterAnim;
-    fov.value = a.startFov + (a.targetFov - a.startFov) * ease;
+    if (elapsed < a.phase1) {
+      const t = elapsed / a.phase1;
+      const ease = 1 - Math.pow(1 - t, 3);
+      fov.value = a.startFov + (a.midFov - a.startFov) * ease;
+    } else if (elapsed < a.phase1 + a.phase2) {
+      const t = (elapsed - a.phase1) / a.phase2;
+      const ease = 1 - Math.pow(1 - t, 3);
+      fov.value = a.midFov + (a.targetFov - a.midFov) * ease;
+    } else {
+      fov.value = a.targetFov;
+      enterAnim = null;
+    }
     camera.fov = fov.value;
     camera.updateProjectionMatrix();
-    if (t >= 1) enterAnim = null;
   }
 
   // Плавное приближение камеры к целевым углам
