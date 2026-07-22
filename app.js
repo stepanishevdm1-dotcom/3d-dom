@@ -334,7 +334,7 @@ function handleClick(clientX, clientY) {
 }
 
 function startHotspotTransition(hotspot, targetId, vIdx, imgPath, onComplete) {
-  const duration = 600;
+  const duration = 800;
   const startFov = fov.value;
   const startYaw = currentEuler.y;
   const startPitch = currentEuler.x;
@@ -436,7 +436,7 @@ function applyTexture(texture, crossfade) {
     sphere.material.renderOrder = 0;
     sphereOld = sphere;
     sphere = newSphere;
-    crossfadeAnim = { startTime: performance.now(), duration: 300 };
+    crossfadeAnim = { startTime: performance.now(), duration: 400 };
   } else if (sphere) {
     if (sphere.material.map) sphere.material.map.dispose();
     sphere.material.dispose();
@@ -698,7 +698,7 @@ function animate() {
     camera.updateProjectionMatrix();
 
     // Начинаем наложение когда камера уже смотрит примерно на метку
-    if (!a.crossfadeDone && t >= 0.35) {
+    if (!a.crossfadeDone && t >= 0.5) {
       a.crossfadeDone = true;
       const cached = imageCache.get(a.imgPath);
       if (cached) {
