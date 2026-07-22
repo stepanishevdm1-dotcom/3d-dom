@@ -290,6 +290,9 @@ document.getElementById('zoom-out').addEventListener('click', () => zoom(5));
 // КЛИК ПО ХОТСПОТАМ
 // ═══════════════════════════════════════════════════════════════
 
+let hotspotAnim = null;
+let enterAnim = null;
+
 function handleClick(clientX, clientY) {
   const rect = renderer.domElement.getBoundingClientRect();
   const ndc = new THREE.Vector2(
@@ -303,10 +306,29 @@ function handleClick(clientX, clientY) {
   const hits = raycaster.intersectObjects(hotspotGroup.children);
   if (hits.length > 0) {
     const target = hits[0].object.userData.target;
-    if (target && scenes[target]) {
-      loadScene(target);
+    if (target && scenes[target] && target !== currentSceneId) {
+      const hotspot = (scenes[currentSceneId].hotspots || []).find(h => h.target === target);
+      if (hotspot) {
+        startHotspotTransition(hotspot, () => loadScene(target, true));
+      } else {
+        loadScene(target);
+      }
     }
   }
+}
+
+function startHotspotTransition(hotspot, onComplete) {
+  const duration = 500;
+  const startFov = fov.value;
+  targetEuler.y = hotspot.yaw;
+  targetEuler.x = hotspot.pitch;
+  hotspotAnim = { startTime: performance.now(), duration, startFov, targetFov: 20, onComplete };
+}
+
+function startEnterAnim() {
+  const duration = 400;
+  const startFov = fov.value;
+  enterAnim = { startTime: performance.now(), duration, startFov, targetFov: 75 };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -374,9 +396,13 @@ function switchVariant(cfg, idx) {
   });
 }
 
-function loadScene(id) {
+function loadScene(id, smooth) {
   const cfg = scenes[id];
   if (!cfg) return;
+
+  // Отменяем анимацию входа, если была
+  enterAnim = null;
+  hotspotAnim = null;
 
   // Сохраняем направление камеры перед переходом
   const savedYaw = targetEuler.y;
@@ -387,7 +413,7 @@ function loadScene(id) {
   const startIdx = (aiMode && cfg.variants && cfg.variants.length > 1) ? 1 : 0;
   currentVariant = startIdx;
 
-  fadeEl.style.opacity = '1';
+  if (!smooth) fadeEl.style.opacity = '1';
   loadingEl.classList.remove('hidden');
 
   const src = startIdx > 0 ? cfg.variants[startIdx].image : cfg.image;
@@ -407,7 +433,11 @@ function loadScene(id) {
     preloadNeighbors(id);
 
     loadingEl.classList.add('hidden');
-    fadeEl.style.opacity = '0';
+    if (smooth) {
+      startEnterAnim();
+    } else {
+      fadeEl.style.opacity = '0';
+    }
   });
 }
 
@@ -570,6 +600,32 @@ window.addEventListener('resize', onResize);
 function animate() {
   requestAnimationFrame(animate);
 
+  // Анимация приближения к хотспоту (при клике по точке)
+  if (hotspotAnim) {
+    const t = Math.min((performance.now() - hotspotAnim.startTime) / hotspotAnim.duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const a = hotspotAnim;
+    fov.value = a.startFov + (a.targetFov - a.startFov) * ease;
+    camera.fov = fov.value;
+    camera.updateProjectionMatrix();
+    if (t >= 1) {
+      const cb = a.onComplete;
+      hotspotAnim = null;
+      if (cb) cb();
+    }
+  }
+
+  // Анимация выхода из двери (плавный зум при входе в сцену)
+  if (enterAnim) {
+    const t = Math.min((performance.now() - enterAnim.startTime) / enterAnim.duration, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const a = enterAnim;
+    fov.value = a.startFov + (a.targetFov - a.startFov) * ease;
+    camera.fov = fov.value;
+    camera.updateProjectionMatrix();
+    if (t >= 1) enterAnim = null;
+  }
+
   // Плавное приближение камеры к целевым углам
   currentEuler.x += (targetEuler.x - currentEuler.x) * SMOOTH;
   currentEuler.y += (targetEuler.y - currentEuler.y) * SMOOTH;
@@ -604,7 +660,7 @@ function buildSidebar() {
     item.className = 'sidebar-room' + (id === currentSceneId ? ' active' : '');
     item.textContent = cfg.name;
     item.addEventListener('click', () => {
-      if (id !== currentSceneId) loadScene(id);
+      if (id !== currentSceneId) loadScene(id, false);
       sidebarEl.classList.remove('open');
     });
     sidebarList.appendChild(item);
