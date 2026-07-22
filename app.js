@@ -316,8 +316,9 @@ function handleClick(clientX, clientY) {
         const path = src.replace(/\\/g, '/');
         let loadedImg = null;
         const img = new Image();
-        img.onload = () => { loadedImg = img; };
+        img.onload = img.onerror = () => { loadedImg = img; };
         img.src = path;
+        if (img.complete && img.naturalWidth > 0) loadedImg = img;
         startHotspotTransition(hotspot, () => {
           if (loadedImg) {
             completeSmoothTransition(target, vIdx, loadedImg);
@@ -361,9 +362,13 @@ function completeSmoothTransition(id, variantIdx, img) {
   texture.repeat.x = -1;
   texture.needsUpdate = true;
 
-  const yaw = targetEuler.y + Math.PI;
-  const pitch = targetEuler.x;
+  const sourceId = currentSceneId;
   const cfg = scenes[id];
+
+  // Смотрим в противоположную сторону от двери, используя координаты новой сцены
+  const returnHS = (cfg.hotspots || []).find(h => h.target === sourceId);
+  const yaw = returnHS ? returnHS.yaw + Math.PI : targetEuler.y + Math.PI;
+  const pitch = returnHS ? returnHS.pitch : targetEuler.x;
 
   currentSceneId = id;
   currentVariant = variantIdx;
@@ -802,7 +807,7 @@ function preloadImage(path, onProgress) {
 }
 
 async function preloadInitial() {
-  const ids = ['hall', 'wardrobe', 'toilet', 'bathroom', 'kitchen', 'bedroom'];
+  const ids = Object.keys(scenes);
   buildPreloadUI(ids);
 
   const promises = ids.map(async (id) => {
