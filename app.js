@@ -150,6 +150,8 @@ container.appendChild(renderer.domElement);
 
 const sphereGeom = new THREE.SphereGeometry(500, 64, 64);
 let sphere = null;
+let sphereOld = null;
+let crossfadeAnim = null;
 const hotspotGroup = new THREE.Group();
 scene.add(hotspotGroup);
 
@@ -314,12 +316,11 @@ function handleClick(clientX, clientY) {
         const vIdx = (aiMode && cfg.variants && cfg.variants.length > 1) ? 1 : 0;
         const src = vIdx > 0 ? cfg.variants[vIdx].image : cfg.image;
         const path = src.replace(/\\/g, '/');
-        startHotspotTransition(hotspot, () => {
+        startHotspotTransition(hotspot, target, vIdx, path, () => {
           const cached = imageCache.get(path);
           if (cached) {
             completeSmoothTransition(target, vIdx, cached);
           } else {
-            // Если вдруг не в кэше — загружаем
             const img = new Image();
             img.onload = img.onerror = () => completeSmoothTransition(target, vIdx, img);
             img.src = path;
@@ -332,7 +333,7 @@ function handleClick(clientX, clientY) {
   }
 }
 
-function startHotspotTransition(hotspot, onComplete) {
+function startHotspotTransition(hotspot, targetId, vIdx, imgPath, onComplete) {
   const duration = 600;
   const startFov = fov.value;
   const startYaw = currentEuler.y;
@@ -345,7 +346,7 @@ function startHotspotTransition(hotspot, onComplete) {
     startTime: performance.now(), duration,
     startFov, targetFov: 20,
     startYaw, yawDelta, startPitch, pitchDelta,
-    onComplete
+    crossfadeDone: false, targetId, vIdx, imgPath, onComplete
   };
 }
 
@@ -354,14 +355,20 @@ function startEnterAnim() {
 }
 
 function completeSmoothTransition(id, variantIdx, img) {
-  const texture = new THREE.Texture(img);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.repeat.x = -1;
-  texture.needsUpdate = true;
-
   const sourceId = currentSceneId;
   const cfg = scenes[id];
+
+  // Завершаем наложение, если вдруг ещё идёт
+  if (crossfadeAnim) {
+    if (sphereOld) {
+      scene.remove(sphereOld);
+      sphereOld.material.dispose();
+    }
+    crossfadeAnim = null;
+    sphereOld = null;
+  }
+  sphere.material.transparent = false;
+  sphere.material.depthWrite = true;
 
   // Смотрим в противоположную сторону от двери, используя координаты новой сцены
   const returnHS = (cfg.hotspots || []).find(h => h.target === sourceId);
@@ -375,8 +382,6 @@ function completeSmoothTransition(id, variantIdx, img) {
   fov.value = 120;
   camera.fov = 120;
   camera.updateProjectionMatrix();
-
-  applyTexture(texture);
 
   targetEuler.set(pitch, yaw, 0, 'YXZ');
   currentEuler.set(pitch, yaw, 0, 'YXZ');
@@ -417,9 +422,22 @@ function loadTexture(path, cb) {
   );
 }
 
-function applyTexture(texture) {
+function applyTexture(texture, crossfade) {
   const mat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
-  if (sphere) {
+  if (crossfade && sphere) {
+    // Старую сферу делаем прозрачной для наложения
+    const newSphere = new THREE.Mesh(sphereGeom, mat);
+    newSphere.material.transparent = true;
+    newSphere.material.opacity = 0;
+    newSphere.renderOrder = 1;
+    scene.add(newSphere);
+    sphere.material.transparent = true;
+    sphere.material.depthWrite = false;
+    sphere.material.renderOrder = 0;
+    sphereOld = sphere;
+    sphere = newSphere;
+    crossfadeAnim = { startTime: performance.now(), duration: 300 };
+  } else if (sphere) {
     if (sphere.material.map) sphere.material.map.dispose();
     sphere.material.dispose();
     sphere.material = mat;
@@ -678,14 +696,41 @@ function animate() {
     fov.value = a.startFov + (a.targetFov - a.startFov) * ease;
     camera.fov = fov.value;
     camera.updateProjectionMatrix();
+
+    // Начинаем наложение новой сцены за 60% до конца анимации
+    if (!a.crossfadeDone && t >= 0.4) {
+      a.crossfadeDone = true;
+      const cached = imageCache.get(a.imgPath);
+      if (cached) {
+        const tex = new THREE.Texture(cached);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.repeat.x = -1;
+        tex.needsUpdate = true;
+        applyTexture(tex, true);
+      }
+    }
+
     if (t >= 1) {
       const cb = a.onComplete;
       hotspotAnim = null;
       if (cb) cb();
     }
-    // Не делаем обычное сглаживание и пульсацию на время анимации
     renderer.render(scene, camera);
     return;
+  }
+
+  // Наложение (crossfade) — дожидаемся завершения
+  if (crossfadeAnim) {
+    const t = Math.min((performance.now() - crossfadeAnim.startTime) / crossfadeAnim.duration, 1);
+    if (sphereOld) sphereOld.material.opacity = 1 - t;
+    sphere.material.opacity = t;
+    if (t >= 1) {
+      scene.remove(sphereOld);
+      sphereOld.material.dispose();
+      sphereOld = null;
+      crossfadeAnim = null;
+    }
   }
 
   // Анимация входа в комнату — плавный зум из 120 в 75
