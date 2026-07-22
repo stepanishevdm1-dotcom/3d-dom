@@ -318,17 +318,25 @@ function handleClick(clientX, clientY) {
 }
 
 function startHotspotTransition(hotspot, onComplete) {
-  const duration = 500;
+  const duration = 600;
   const startFov = fov.value;
-  targetEuler.y = hotspot.yaw;
-  targetEuler.x = hotspot.pitch;
-  hotspotAnim = { startTime: performance.now(), duration, startFov, targetFov: 20, onComplete };
+  const startYaw = targetEuler.y;
+  const startPitch = targetEuler.x;
+  hotspotAnim = {
+    startTime: performance.now(), duration,
+    startFov, targetFov: 20,
+    startYaw, targetYaw: hotspot.yaw,
+    startPitch, targetPitch: hotspot.pitch,
+    onComplete
+  };
 }
 
 function startEnterAnim() {
-  const duration = 400;
-  const startFov = fov.value;
-  enterAnim = { startTime: performance.now(), duration, startFov, targetFov: 75 };
+  const duration = 500;
+  fov.value = 120;
+  camera.fov = 120;
+  camera.updateProjectionMatrix();
+  enterAnim = { startTime: performance.now(), duration, startFov: 120, targetFov: 75 };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -600,11 +608,16 @@ window.addEventListener('resize', onResize);
 function animate() {
   requestAnimationFrame(animate);
 
-  // Анимация приближения к хотспоту (при клике по точке)
+  // Анимация приближения к хотспоту — поворот + зум одновременно
   if (hotspotAnim) {
     const t = Math.min((performance.now() - hotspotAnim.startTime) / hotspotAnim.duration, 1);
     const ease = 1 - Math.pow(1 - t, 3);
     const a = hotspotAnim;
+    const yaw = a.startYaw + (a.targetYaw - a.startYaw) * ease;
+    const pitch = a.startPitch + (a.targetPitch - a.startPitch) * ease;
+    targetEuler.set(pitch, yaw, 0, 'YXZ');
+    currentEuler.set(pitch, yaw, 0, 'YXZ');
+    applyRotation();
     fov.value = a.startFov + (a.targetFov - a.startFov) * ease;
     camera.fov = fov.value;
     camera.updateProjectionMatrix();
@@ -613,9 +626,12 @@ function animate() {
       hotspotAnim = null;
       if (cb) cb();
     }
+    // Не делаем обычное сглаживание и пульсацию на время анимации
+    renderer.render(scene, camera);
+    return;
   }
 
-  // Анимация выхода из двери (плавный зум при входе в сцену)
+  // Анимация выхода из двери — плавный зум из 120 в 75
   if (enterAnim) {
     const t = Math.min((performance.now() - enterAnim.startTime) / enterAnim.duration, 1);
     const ease = 1 - Math.pow(1 - t, 3);
