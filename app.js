@@ -711,6 +711,19 @@ function animate() {
       }
     }
 
+    // Обновляем прозрачность во время движения камеры
+    if (crossfadeAnim) {
+      const cf = Math.min((performance.now() - crossfadeAnim.startTime) / crossfadeAnim.duration, 1);
+      if (sphereOld) sphereOld.material.opacity = 1 - cf;
+      sphere.material.opacity = cf;
+      if (cf >= 1) {
+        scene.remove(sphereOld);
+        if (sphereOld) sphereOld.material.dispose();
+        sphereOld = null;
+        crossfadeAnim = null;
+      }
+    }
+
     if (t >= 1) {
       const cb = a.onComplete;
       hotspotAnim = null;
